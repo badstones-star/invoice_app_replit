@@ -1,1 +1,36 @@
-{% extends 'base.html' %}{% block content %}<div class="card p-4">{% if settings and settings.logo_path %}<img src="/{{ settings.logo_path }}" alt="Logo" width="150">{% endif %}<h3>{{ settings.name if settings else 'Company Placeholder' }}</h3><p>{{ settings.address if settings else 'Address Placeholder' }} | {{ settings.phone if settings else 'Phone Placeholder' }}</p><hr><h4>Invoice {{ invoice.invoice_number }}</h4><p>Pelanggan: {{ invoice.customer_name }}</p>{% if invoice.discount %}<p>Potongan: {{ invoice.discount }}</p>{% endif %}<p>Total: <b>{{ invoice.total }}</b></p><p>Status: <b>{{ invoice.status }}</b></p></div>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<div class="card p-4">
+  {% if settings and settings.logo_path %}
+    <img src="/{{ settings.logo_path }}" alt="Logo" width="150">
+  {% endif %}
+  <h3>{{ settings.name if settings else 'Company Placeholder' }}</h3>
+  <p>{{ settings.address if settings else 'Address Placeholder' }} | {{ settings.phone if settings else 'Phone Placeholder' }}</p>
+  <hr>
+  <h4>Invoice {{ invoice.invoice_number }}</h4>
+  <p>Pelanggan: {{ invoice.customer_name }}</p>
+  <p>Tanggal: {{ invoice.date }}</p>
+
+  <h5>Rincian Item</h5>
+  <table class="table table-sm">
+    <thead><tr><th>Deskripsi</th><th style="width:120px">Qty</th><th style="width:140px">Harga</th><th style="width:140px">Jumlah</th></tr></thead>
+    <tbody>
+      {% for it in invoice.items %}
+      <tr>
+        <td>{{ it.description }}</td>
+        <td>{{ '%.2f'|format(it.quantity) }}</td>
+        <td>{{ '%.2f'|format(it.price) }}</td>
+        <td>{{ '%.2f'|format(it.quantity * it.price) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p>Subtotal: <b>{{ '%.2f'|format(subtotal) }}</b></p>
+  {% if discount is not none %}
+    <p>Potongan: <b>{{ '%.2f'|format(discount) }}</b></p>
+  {% endif %}
+  <p>Total: <b>{{ '%.2f'|format(total) }}</b></p>
+  <p>Status: <b>{{ invoice.status }}</b></p>
+</div>
+{% endblock %}
