@@ -1,1 +1,108 @@
-{% extends 'base.html' %}{% block content %}<h3>Buat Invoice Baru</h3><form method="post"><div class="mb-3"><label>Nama Pelanggan</label><input type="text" name="customer_name" class="form-control" required></div><div class="mb-3"><label>Potongan (opsional)</label><input type="number" step="0.01" name="discount" class="form-control"></div><div class="mb-3"><label>Total Jumlah</label><input type="number" step="0.01" name="total" class="form-control" required></div><div class="mb-3"><label>Status</label><select name="status" class="form-control"><option value="BELUM LUNAS">BELUM LUNAS</option><option value="LUNAS">LUNAS</option></select></div><button class="btn btn-success" type="submit">Simpan</button></form>{% endblock %}
+{% extends "base.html" %}
+{% block content %}
+<h3>Buat Invoice Baru</h3>
+
+<form method="post" id="invoice-form">
+  <div class="mb-3">
+    <label>Nama Pelanggan</label>
+    <input type="text" name="customer_name" class="form-control" required>
+  </div>
+
+  <h5>Item Barang</h5>
+  <table class="table table-sm">
+    <thead>
+      <tr>
+        <th>Deskripsi</th>
+        <th style="width:120px">Qty</th>
+        <th style="width:140px">Harga Satuan</th>
+        <th style="width:60px"></th>
+      </tr>
+    </thead>
+    <tbody id="items-body">
+      <tr>
+        <td><input name="item_description" class="form-control" required></td>
+        <td><input name="item_quantity" type="number" step="0.01" class="form-control qty" value="1" required></td>
+        <td><input name="item_price" type="number" step="0.01" class="form-control price" value="0.00" required></td>
+        <td><button type="button" class="btn btn-danger btn-sm remove-row">−</button></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <button type="button" id="add-item" class="btn btn-outline-primary btn-sm mb-3">+ Tambah item</button>
+
+  <div class="mb-3">
+    <label>Potongan (opsional)</label>
+    <input type="number" step="0.01" name="discount" id="discount" class="form-control" placeholder="Masukkan potongan (jumlah)">
+  </div>
+
+  <p>Subtotal: <strong id="subtotal_display">0.00</strong></p>
+  <p>Grand Total: <strong id="total_display">0.00</strong></p>
+
+  <div class="mb-3">
+    <label>Status</label>
+    <select name="status" class="form-control">
+      <option value="BELUM LUNAS">BELUM LUNAS</option>
+      <option value="LUNAS">LUNAS</option>
+    </select>
+  </div>
+
+  <button class="btn btn-success" type="submit">Simpan Invoice</button>
+</form>
+
+<script>
+function recalc() {
+  let rows = document.querySelectorAll('#items-body tr');
+  let subtotal = 0.0;
+  rows.forEach(r => {
+    let qty = parseFloat(r.querySelector('input[name="item_quantity"]').value) || 0;
+    let price = parseFloat(r.querySelector('input[name="item_price"]').value) || 0;
+    subtotal += qty * price;
+  });
+  subtotal = Math.round((subtotal + Number.EPSILON) * 100) / 100;
+  let discount = parseFloat(document.getElementById('discount').value) || 0.0;
+  let total = subtotal - discount;
+  if (total < 0) total = 0;
+  total = Math.round((total + Number.EPSILON) * 100) / 100;
+  document.getElementById('subtotal_display').innerText = subtotal.toFixed(2);
+  document.getElementById('total_display').innerText = total.toFixed(2);
+}
+
+function attachRowListeners(row) {
+  row.querySelectorAll('.qty, .price').forEach(inp => {
+    inp.addEventListener('input', recalc);
+  });
+  let btn = row.querySelector('.remove-row');
+  btn.addEventListener('click', function(){
+    // remove row but keep at least one
+    let body = document.getElementById('items-body');
+    if (body.querySelectorAll('tr').length > 1) {
+      row.remove();
+      recalc();
+    } else {
+      // clear inputs
+      row.querySelector('input[name="item_description"]').value = '';
+      row.querySelector('input[name="item_quantity"]').value = '1';
+      row.querySelector('input[name="item_price"]').value = '0.00';
+      recalc();
+    }
+  });
+}
+
+document.getElementById('add-item').addEventListener('click', function(){
+  let tbody = document.getElementById('items-body');
+  let tr = document.createElement('tr');
+  tr.innerHTML = `
+    <td><input name="item_description" class="form-control" required></td>
+    <td><input name="item_quantity" type="number" step="0.01" class="form-control qty" value="1" required></td>
+    <td><input name="item_price" type="number" step="0.01" class="form-control price" value="0.00" required></td>
+    <td><button type="button" class="btn btn-danger btn-sm remove-row">−</button></td>
+  `;
+  tbody.appendChild(tr);
+  attachRowListeners(tr);
+});
+
+document.querySelectorAll('#items-body tr').forEach(r => attachRowListeners(r));
+document.getElementById('discount').addEventListener('input', recalc);
+window.addEventListener('load', recalc);
+</script>
+{% endblock %}
